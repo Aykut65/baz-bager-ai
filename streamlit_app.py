@@ -1,16 +1,14 @@
 import streamlit as st
 import google.generativeai as genai
 
-# Sayfa Ayarları (Başlığı geri getirir)
-st.set_page_config(page_title="BAZ BAGER AI: GOD MODE", page_icon="⚡", layout="wide")
-st.markdown("<h1 style='text-align: center;'>⚡ BAZ BAGER AI: GOD MODE</h1>", unsafe_allow_config=True)
+# Sayfa Yapılandırması
+st.set_page_config(page_title="BAZ BAGER AI", layout="wide")
+st.title("⚡ BAZ BAGER AI: GOD MODE")
 
-# API Anahtarı Yapılandırması
+# API Ayarları
 if 'GOOGLE_API_KEY' in st.secrets:
     genai.configure(api_key=st.secrets['GOOGLE_API_KEY'])
-    
-    # 404 HATASINI ÇÖZEN KESİN FORMAT
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -19,15 +17,14 @@ if 'GOOGLE_API_KEY' in st.secrets:
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
 
-    if prompt := st.chat_input("Sınırsız güç emrinde..."):
+    if prompt := st.chat_input("Emret, anında yapayım..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.markdown(prompt)
         
         with st.chat_message("assistant"):
-            placeholder = st.empty()
             full_text = ""
+            placeholder = st.empty()
             try:
-                # Yanıt Akışı
                 response = model.generate_content(prompt, stream=True)
                 for chunk in response:
                     if chunk.text:
@@ -35,6 +32,6 @@ if 'GOOGLE_API_KEY' in st.secrets:
                         placeholder.markdown(full_text + "▌")
                 st.session_state.messages.append({"role": "assistant", "content": full_text})
             except Exception as e:
-                st.error(f"Sistemsel Hata: {e}")
+                st.error(f"Hata: {e}")
 else:
-    st.error("🔑 API Key bulunamadı! Lütfen Settings > Secrets kısmını kontrol et.")
+    st.error("API Anahtarı bulunamadı!")
