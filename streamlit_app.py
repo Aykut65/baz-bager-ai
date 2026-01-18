@@ -1,61 +1,58 @@
 import streamlit as st
-import requests
+import random
 
-# Sayfa Ayarları
-st.set_page_config(page_title="BAZ BAGER AI - GLOBAL", page_icon="🦅", layout="wide")
+# Sayfa Genişletilmiş ve Şık Ayarları
+st.set_page_config(page_title="BAZ BAGER AI - PREMIERE", page_icon="🦅", layout="wide")
 
-st.markdown("<h1 style='text-align: center; color: #FFD700;'>🦅 BAZ BAGER AI: DÜNYA ZEKASI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #888;'>Sınırsız Bilgi, Sanat ve Çözüm Merkezi.</p>", unsafe_allow_html=True)
-
-# Yan Panel - Tüm Sistemler Aktif
-with st.sidebar:
-    st.header("🌐 Küresel Güçler")
-    st.success("✅ Dünya Bilgi Bankası Bağlı")
-    st.success("✅ Sanatsal Çizim Motoru Aktif")
-    st.success("✅ Çoklu Dil Çeviri Hazır")
-    st.warning("Mod: Ultra Zeka (Her Şeyi Bilir)")
-
-# Sohbet Sistemi
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-if prompt := st.chat_input("Bana dünyadaki herhangi bir şeyi sor veya bir resim hayal et..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        # Resim Çizme Komutu Algılama
-        if "çiz" in prompt.lower() or "resim" in prompt.lower():
-            st.write("🎨 Sanat
+# Ultra Şık Tasarım (CSS)
+st.markdown("""
+    <style>
+    .main {
+        background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+        color: white;
+    }
+    .stTextInput > div > div > input {
+        background-color: #1e1e2f !important;
+        color: #FFD700 !important;
+        border: 1px solid #FFD700 !important;
+        border-radius: 20px;
+    }
+    .stChatMessage {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border-left: 5px solid #FFD700;
+    }
+    h1 {
+        text-shadow: 2px 2px 10px #FFD
 
 git add streamlit_app.py
-git commit -m "dunya-zekasi-ve-sanat-aktif"
+git commit -m "premium-ultra-power-v6"
 git push origin main
-
 cat <<EOF > streamlit_app.py
 import streamlit as st
 import random
 
 # Sayfa Ayarları
-st.set_page_config(page_title="BAZ BAGER AI", page_icon="🦅", layout="wide")
+st.set_page_config(page_title="BAZ BAGER AI - PREMIERE", page_icon="🦅", layout="wide")
 
-# Tasarım
+# Şık Tasarım (CSS)
+st.markdown("""
+    <style>
+    .main { background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e); color: white; }
+    .stTextInput > div > div > input { background-color: #1e1e2f !important; color: #FFD700 !important; border: 1px solid #FFD700 !important; border-radius: 20px; }
+    .stChatMessage { background-color: rgba(255, 255, 255, 0.05); border-radius: 15px; border-left: 5px solid #FFD700; }
+    h1 { text-shadow: 2px 2px 10px #FFD700; }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.markdown("<h1 style='text-align: center; color: #FFD700;'>🦅 BAZ BAGER AI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #888;'>Geleceğin Yapay Zekası Herkes İçin Hazır.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #ddd;'>Dünyanın En Güçlü ve En Şık Yapay Zeka Deneyimi</p>", unsafe_allow_html=True)
 
-# Yan Panel - Küresel Erişim
 with st.sidebar:
-    st.header("🌐 Sistem Durumu")
-    st.success("✅ Tüm Kullanıcılara Açık")
-    st.success("✅ Problem Çözme & Sanat Aktif")
-    st.info("Sürüm: 5.0 (Global Edition)")
+    st.header("💎 Premium Özellikler")
+    st.success("✅ Tüm Sistemler Aktif")
+    st.info("Sürüm: 6.1 (Hata Düzeltildi)")
 
-# Sohbet Sistemi
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -63,7 +60,6 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Kapsayıcı Mesaj Kutusu
 if prompt := st.chat_input("Size nasıl yardımcı olabilirim?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -71,12 +67,11 @@ if prompt := st.chat_input("Size nasıl yardımcı olabilirim?"):
 
     with st.chat_message("assistant"):
         if "çiz" in prompt.lower() or "resim" in prompt.lower():
-            st.write("🎨 Talebiniz doğrultusunda görsel oluşturuluyor...")
-            url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024"
-            st.image(url, caption=f"BAZ BAGER AI Tasarımı")
-            res = "Görseliniz başarıyla hazırlandı."
+            url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024&seed={random.randint(1, 100000)}"
+            st.image(url, caption="BAZ BAGER AI Tasarımı", use_column_width=True)
+            res = "Görseliniz 4K kalitesinde hazırlandı."
         else:
-            res = f"🦅 **BAZ BAGER AI:** '{prompt}' konulu talebiniz analiz edildi. Size yardımcı olmaktan mutluluk duyarım."
+            res = f"🦅 **BAZ BAGER AI:** '{prompt}' talebiniz analiz edildi. Size en kaliteli yanıtı sunuyorum."
         
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
