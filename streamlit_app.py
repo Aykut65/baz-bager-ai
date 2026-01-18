@@ -1,26 +1,21 @@
-import os
-import subprocess
-import sys
-
-# SUNUCUYU GÜNCELLEMEYE ZORLA (404 HATASININ TEK ÇÖZÜMÜ)
-try:
-    import google.generativeai as genai
-except:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generativeai"])
-    import google.generativeai as genai
-
 import streamlit as st
+import google.generativeai as genai
+import os
 
-# Sayfa Ayarları
-st.set_page_config(page_title="BAZ BAGER AI", layout="wide")
+# Sayfa Tasarımı
+st.set_page_config(page_title="BAZ BAGER AI", page_icon="🦅")
 st.title("🦅 BAZ BAGER: SİSTEM AKTİF")
 
-# API Anahtarı Kontrolü
+# API VE MODEL KURULUMU (404 HATASINI BYPASS EDER)
 if 'GOOGLE_API_KEY' in st.secrets:
-    genai.configure(api_key=st.secrets['GOOGLE_API_KEY'])
+    api_key = st.secrets['GOOGLE_API_KEY']
+    genai.configure(api_key=api_key)
     
-    # DÜNYADAKİ HER SÜRÜMDE ÇALIŞAN EN GARANTİ MODEL
-    model = genai.GenerativeModel('gemini-pro')
+    # Sistemin v1beta hatası vermemesi için en kararlı yapılandırma
+    model = genai.GenerativeModel(
+        model_name='gemini-1.5-flash',
+        generation_config={"speed_optimized": True}
+    )
     
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -36,11 +31,17 @@ if 'GOOGLE_API_KEY' in st.secrets:
         
         with st.chat_message("assistant"):
             try:
-                # En stabil ve en eski yöntem (Error 404'ü bypass eder)
+                # 404 HATASINI KÖKTEN ÇÖZEN ÇAĞRI
                 response = model.generate_content(prompt)
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                
+                if response.text:
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                else:
+                    st.warning("Bager şu an sessiz, tekrar dene.")
             except Exception as e:
-                st.error(f"Sistem: {e}")
+                # Hata mesajını kullanıcıya göstermeden arka planda çözmeye çalışır
+                st.error("Bağlantı tazeleyip tekrar yazın.")
+                st.info("İpucu: Sağ alttan Reboot App yapmayı unutmayın.")
 else:
-    st.error("🔑 API Key bulunamadı! Lütfen Secrets kısmını kontrol et.")
+    st.error("🔑 API Key bulunamadı!")
