@@ -2,18 +2,23 @@ import os
 import subprocess
 import sys
 
-# Kütüphaneyi zorla güncelle (Hataları bitiren kritik adım)
-subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "google-generativeai"])
+# KÜTÜPHANEYİ ZORLA GÜNCELLE (404 HATASINI BİTİREN KRİTİK ADIM)
+try:
+    import google.generativeai as genai
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generativeai"])
+    import google.generativeai as genai
 
 import streamlit as st
-import google.generativeai as genai
 
+# Sayfa Başlığı
 st.title("⚡ BAZ BAGER AI: GOD MODE")
 
+# API Ayarları
 if 'GOOGLE_API_KEY' in st.secrets:
     genai.configure(api_key=st.secrets['GOOGLE_API_KEY'])
     
-    # En güncel ve en kararlı model ismi
+    # En güvenli model ismi
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     if "messages" not in st.session_state:
@@ -35,4 +40,4 @@ if 'GOOGLE_API_KEY' in st.secrets:
             except Exception as e:
                 st.error(f"Sistemsel Durum: {e}")
 else:
-    st.error("🔑 API Key eksik!")
+    st.error("🔑 API Key bulunamadı!")
