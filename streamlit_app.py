@@ -45,3 +45,4 @@ if 'GOOGLE_API_KEY' in st.secrets:
                 st.info("İpucu: Sağ alttan Reboot App yapmayı unutmayın.")
 else:
     st.error("🔑 API Key bulunamadı!")
+
