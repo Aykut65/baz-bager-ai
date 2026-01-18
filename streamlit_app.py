@@ -8,7 +8,7 @@ if 'GOOGLE_API_KEY' in st.secrets:
     genai.configure(api_key=st.secrets['GOOGLE_API_KEY'])
     
     # 404 hatasını çözen model tanımlaması
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    model = genai.GenerativeModel("models/gemini-1.5-flash")
     
     if "messages" not in st.session_state:
         st.session_state.messages = []
