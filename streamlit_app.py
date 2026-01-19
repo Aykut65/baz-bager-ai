@@ -10,16 +10,23 @@ st.set_page_config(page_title="Gemini - BAZ BAGER", page_icon="🦅", layout="ce
 
 st.markdown("""
 <style>
+    /* Gemini Minimalist Karanlık Tema */
     #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0E1117; color: #E3E3E3; font-family: 'Google Sans', sans-serif;}
+    
+    /* Hoşgeldin Başlıkları */
     .welcome-title {font-size: 42px; font-weight: 500; margin-top: 50px; color: white;}
     .welcome-subtitle {font-size: 26px; font-weight: 400; color: #8E918F; margin-bottom: 40px;}
+    
+    /* Gemini Tarzı Öneri Butonları */
     .stButton>button {
         background-color: #1E1F20; color: #E3E3E3; border-radius: 12px;
         border: 1px solid #444746; padding: 18px; text-align: left; width: 100%;
         font-size: 15px; transition: 0.3s; margin-bottom: 10px;
     }
     .stButton>button:hover {background-color: #333537; border-color: #8E918F;}
+    
+    /* Mesajlar ve Giriş Alanı */
     [data-testid="stChatMessage"] {background-color: transparent; border: none; padding: 15px 0;}
     .stChatInputContainer {padding-bottom: 30px; background-color: #0E1117;}
 </style>
@@ -35,7 +42,7 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- 3. GEMINI ANA SAYFA EKRANI (Görsel 1000149640 Birebir) ---
+# --- 3. ANA GİRİŞ EKRANI (Görsel 1000149640 Birebir) ---
 if not st.session_state.messages:
     st.markdown('<div class="welcome-title">Merhaba Aykut</div>', unsafe_allow_html=True)
     st.markdown('<div class="welcome-subtitle">Nereden başlayalım?</div>', unsafe_allow_html=True)
@@ -59,13 +66,70 @@ if not st.session_state.messages:
 # --- 4. SOHBET AKIŞI ---
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
-        c_val = str(m["content"])
-        if "http" in c_val and "pollinations" in c_val:
-            st.image(c_val, use_container_width=True)
+        msg_c = str(m["content"])
+        if "http" in msg_c and "pollinations" in msg_c:
+            st.image(msg_c, use_container_width=True)
         else:
-            st.markdown(c_val)
+            st.markdown(msg_c)
 
 # --- 5. AKILLI GİRİŞ (AUTO-STOP MİKROFON) ---
 st.write("🎙️ **Sesli Komut:**")
+# 'just_once=True' sessizliği algılar ve tekrar dokunmaya gerek bırakmaz
 voice_in = speech_to_text(
-    language='tr', start_
+    language='tr', 
+    start_prompt="Konuşmak için Dokun", 
+    stop_prompt="Dinliyorum...",
+    just_once=True, 
+    key='bager_gemini_master'
+)
+
+query = None
+if voice_in:
+    query = voice_in
+elif txt_input := st.chat_input("Gemini'a sorun"):
+    query = txt_input
+
+# --- 6. ZEKA VE CEVAP MANTIĞI ---
+if query:
+    if not any(m["content"] == query for m in st.session_state.messages):
+        st.session_state.messages.append({"role": "user", "content": query})
+        st.rerun()
+
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    u_msg = st.session_state.messages[-1]["content"]
+    with st.chat_message("assistant"):
+        q_low = u_msg.lower()
+        res = ""
+
+        if any(x in q_low for x in ["kim tasarladı", "sahibin", "seni kim"]):
+            res = "Beni tasarlayan ve tek sahibim Aykut Kutpınar'dır."
+            st.markdown(res)
+        elif any(x in q_low for x in ["resim", "çiz", "tasarla"]):
+            try:
+                seed = random.randint(1, 1000000)
+                url = f"https://image.pollinations.ai/prompt/{u_msg.replace(' ', '%20')}?width=1024&height=1024&seed={seed}"
+                st.image(url, caption="Bager Tasarımı")
+                res = url
+            except: st.error("Motor meşgul.")
+        else:
+            try:
+                # Gemini zekası ve saf Türkçe talimatı (cite: 1768832038896.jpeg)
+                sys_msg = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini'ın tüm zekasına sahipsin. Onun gibi derin ve profesyonel ol. SADECE saf Türkçe konuş."
+                hist = [{"role": "system", "content": sys_msg}]
+                for m in st.session_state.messages:
+                    if "http" not in str(m["content"]):
+                        hist.append(m)
+                chat = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=hist)
+                res = chat.choices[0].message.content
+                st.markdown(res)
+            except Exception as e: st.error(f"Hata: {e}")
+
+        if res:
+            st.session_state.messages.append({"role": "assistant", "content": res})
+            if "http" not in res:
+                try:
+                    # 'slow=False' ile akıcı hız (cite: 1768832038896.jpeg)
+                    tts = gTTS(text=res, lang='tr', slow=False)
+                    b = BytesIO(); tts.write_to_fp(b)
+                    st.audio(b, format='audio/mp3', autoplay=True)
+                except: pass
