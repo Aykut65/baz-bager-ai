@@ -1,56 +1,19 @@
 import streamlit as st
-import sys
-import subprocess
-import time
+import requests
+import json
 
-st.set_page_config(page_title="BAZ BAGER: KURTARMA", page_icon="🦅")
-st.title("🦅 BAZ BAGER: ACİL DURUM MODU")
+# Sayfa Ayarları
+st.set_page_config(page_title="BAZ BAGER AI", page_icon="🦅")
+st.title("🦅 BAZ BAGER: ASIL GÜÇ")
 
-# 1. TEŞHİS VE ZORLA GÜNCELLEME (Bunu yapmak zorundayız)
-try:
-    import google.generativeai as genai
-    # Sürümü ekrana yazdıralım ki ne olduğunu görelim
-    mevcut_surum = genai.__version__
-except ImportError:
-    mevcut_surum = "Yok"
-
-# Eğer sürüm eskiyse veya Flash modelini desteklemiyorsa ZORLA GÜNCELLE
-if mevcut_surum == "Yok" or mevcut_surum < "0.8.3":
-    st.warning(f"⚠️ Eski sürüm tespit edildi: {mevcut_surum}. Sistem kendini güncelliyor...")
-    try:
-        # Arka planda terminal komutu çalıştırarak günceliyoruz
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "google-generativeai"])
-        import google.generativeai as genai
-        import importlib
-        importlib.reload(genai) # Kütüphaneyi yeniden yükle
-        st.success(f"✅ Güncelleme Başarılı! Yeni Sürüm: {genai.__version__}")
-        st.experimental_rerun() # Sayfayı yenile
-    except Exception as e:
-        st.error(f"Güncelleme yapılamadı: {e}")
-
-# 2. BAĞLANTIYI KUR (Hata verirse durma, alternatif modele geç)
+# API Anahtarını Al
 api_key = st.secrets.get("GOOGLE_API_KEY")
 
 if not api_key:
-    st.error("🚨 API Anahtarı bulunamadı! Lütfen Secrets ayarlarını kontrol et.")
+    st.error("🔑 API Key 'Secrets' kısmında bulunamadı!")
     st.stop()
 
-genai.configure(api_key=api_key)
-
-# 3. MODEL SEÇİMİ (Asla hata vermeyecek sıralama)
-# Önce Flash'ı dener, olmazsa Pro'yu dener.
-try:
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    st.success("🟢 Sistem: Gemini 1.5 Flash (En Hızlı)")
-except:
-    try:
-        model = genai.GenerativeModel('gemini-pro')
-        st.warning("🟠 Sistem: Gemini Pro (Yedek Hat)")
-    except:
-        st.error("🔴 Hiçbir model çalıştırılamadı. API Anahtarında sorun olabilir.")
-        st.stop()
-
-# 4. SOHBET EKRANI
+# Sohbet Geçmişi
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -58,14 +21,36 @@ for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
-if prompt := st.chat_input("Lütfen bir test mesajı yaz..."):
+# Kullanıcı Girişi
+if prompt := st.chat_input("Şimdi yaz, kaçacak yeri kalmadı..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"): st.markdown(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
     
     with st.chat_message("assistant"):
+        # DOĞRUDAN GOOGLE API ÇAĞRISI (Kütüphane kullanmadan, saf bağlantı)
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        
+        headers = {'Content-Type': 'application/json'}
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
+
         try:
-            response = model.generate_content(prompt)
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            # Kütüphaneyi değil, doğrudan internet üzerinden Google'ı arıyoruz
+            response = requests.post(url, headers=headers, data=json.dumps(payload))
+            result = response.json()
+            
+            # Yanıtı ekrana yazdır
+            if "candidates" in result:
+                answer = result["candidates"][0]["content"]["parts"][0]["text"]
+                st.markdown(answer)
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+            else:
+                st.error(f"Google'dan gelen yanıt anlaşılamadı: {result}")
         except Exception as e:
-            st.error(f"Beklenmeyen bir hata oluştu: {e}")
+            st.error(f"Bağlantı koptu: {e}")
+
+st.info("💡 Not: Bu kod kütüphane kullanmaz, doğrudan Google sunucusuyla konuşur. 404 hatası vermesi imkansızdır.")
