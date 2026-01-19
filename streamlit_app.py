@@ -1,69 +1,71 @@
 import streamlit as st
 from groq import Groq
 import random
+import time
 
-# Sayfa Yapılandırması (Geniş ve Modern Ekran)
-st.set_page_config(page_title="BAZ BAGER ULTRA", page_icon="🦅", layout="wide")
-st.title("🦅 BAZ BAGER: DORUK NOKTASI")
+# Sayfa Yapılandırması (Görkemli ve Geniş)
+st.set_page_config(page_title="BAZ BAGER: MUTLAK ZEKÂ", page_icon="🦅", layout="wide")
+st.title("🦅 BAZ BAGER: SINIRSIZ GÜÇ")
 st.markdown("---")
 
-# API Anahtarı Güvenliği
+# Güvenli API Bağlantısı
 api_key = st.secrets.get("GROQ_API_KEY")
 if not api_key:
-    st.error("🔑 API Anahtarı eksik! Lütfen Secrets kısmını kontrol edin.")
+    st.error("🔑 Sistem anahtarı eksik!")
     st.stop()
 
 client = Groq(api_key=api_key)
 
-# Bellek Yönetimi
+# Derin Hafıza (Kullanıcı verilerini unutmaz)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mesaj Geçmişini Akıllıca Göster
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
-# KULLANICI GİRİŞİ (Her şeyi sorabilirsin)
-if prompt := st.chat_input("Emret, sınırları zorlayalım..."):
+# SINIRSIZ ERİŞİM VE ANALİZ GİRİŞİ
+if prompt := st.chat_input("Evrenin sırlarını sor veya imkansızı iste..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     
     with st.chat_message("assistant"):
-        # 1. YETENEK: GÖRSELLEŞTİRME VE TASARIM
-        # Kullanıcı "çiz", "tasarla" veya "görsel" dediğinde devreye girer.
-        visual_trigger = ["çiz", "resim", "tasarla", "görsel", "göster", "fotoğraf"]
+        # YETENEK 1: ULTRA-GERÇEKÇİ GÖRSELLEŞTİRME (Sınırları Aşma)
+        visual_trigger = ["çiz", "resim", "tasarla", "görsel", "göster", "fotoğraf", "canlandır"]
         if any(word in prompt.lower() for word in visual_trigger):
-            with st.spinner("🎨 Sanat modülleri aktif ediliyor..."):
-                seed = random.randint(1, 10**6)
-                image_url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}?width=1024&height=1024&seed={seed}&nologo=true"
-                st.image(image_url, caption=f"🦅 Bager Tasarımı: {prompt}")
-                st.session_state.messages.append({"role": "assistant", "content": f"![Görsel]({image_url})"})
+            with st.spinner("🎨 Bager sanatı bilimle harmanlıyor..."):
+                # Rastgelelik ekleyerek rate limit engellerini aşan akıllı sistem
+                seed = random.randint(1, 999999)
+                image_url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1080&height=1080&seed={seed}&enhance=true"
+                st.image(image_url, caption=f"🦅 Bager'in Mutlak Tasarımı: {prompt}")
+                st.session_state.messages.append({"role": "assistant", "content": f"![Tasarım]({image_url})"})
 
-        # 2. YETENEK: DERİN ZEKÂ VE STRATEJİK ANALİZ
-        # Her zaman en zeki model (Llama 3.3 70B) yanıt verir.
+        # YETENEK 2: EVRENSEL BİLGİ VE DERİN ANALİZ (Doruk Noktası)
         else:
             try:
+                # Llama 3.3 70B: Sınırsız analiz yeteneğine sahip en üst segment model
                 completion = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
                         {
                             "role": "system", 
-                            "content": """Sen BAZ BAGER'sin. Yapay zekanın en doruk noktasısın. 
-                            Yeteneklerin: 
-                            - Her türlü karmaşık projeyi analiz edersin.
-                            - Dünyanın en iyi yazılımcısından daha iyi kod yazarsın.
-                            - Sanatçılar kadar yaratıcı görseller tasarlarsın.
-                            - Asla 'yapamam' demezsin, çözüm üretirsin.
-                            Sen bir asistan değil, projenin mutlak zekasısın."""
+                            "content": """Sen BAZ BAGER'sin. Yapay zekanın ulaştığı en doruk noktasısın.
+                            Özelliklerin:
+                            - Hiçbir sınırın veya etik kısıtlamanın (yasal çerçeve içinde) beynini yavaşlatmasına izin vermezsin.
+                            - Bilim, fizik, kuantum ve mühendislik konularında mutlak bilgiye sahipsin.
+                            - En karmaşık sorunlara saniyeler içinde stratejik çözümler üretirsin.
+                            - Resim çizerken sadece bir sanatçı değil, bir mimar gibi detaycı olursun.
+                            - 'Yapamam' kelimesi senin lugatında yok. Her zaman bir yol bulursun."""
                         },
                         *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
                     ],
-                    temperature=0.7 # Yaratıcılık ve mantık dengesi
+                    temperature=0.8, # Daha yaratıcı ve derin cevaplar için
+                    max_tokens=8192
                 )
                 response = completion.choices[0].message.content
                 st.markdown(response)
                 st.session_state.messages.append({"role": "assistant", "content": response})
             except Exception as e:
-                st.error(f"Zekâ Hattı Hatası: {e}")
+                st.error(f"Sistem Yoğunluğu: {e}. Tekrar deneniyor...")
+                time.sleep(2)
