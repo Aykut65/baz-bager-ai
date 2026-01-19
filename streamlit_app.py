@@ -5,13 +5,38 @@ from io import BytesIO
 from streamlit_mic_recorder import speech_to_text
 import random
 
-# --- 1. ARAYÜZ VE TASARIM (GEMINI TARZI) ---
+# --- 1. ARAYÜZ TASARIMI (MODERN & ŞIK) ---
 st.set_page_config(page_title="BAZ BAGER", page_icon="🦅", layout="centered")
 
-# CSS: Arayüzü modern, temiz ve siyah ekran hatasından uzak tutar
-st.markdown("<style>#MainMenu, footer, header {visibility: hidden;} .stApp {background-color: #0E1117; color: white;} .stChatMessage {border-radius: 15px; border: 1px solid #444; margin-bottom: 10px;}</style>", unsafe_allow_html=True)
+# CSS: Gereksiz her şeyi gizler ve Gemini tarzı bir odaklanma sağlar
+st.markdown("""
+<style>
+    #MainMenu, footer, header {visibility: hidden;}
+    .stApp {background-color: #0E1117; color: #FFFFFF;}
+    [data-testid="stChatMessage"] {border-radius: 15px; border: 1px solid #333; margin-bottom: 8px;}
+</style>
+""", unsafe_allow_html=True)
 
-# --- 2. SİSTEM VE API GÜVENLİĞİ ---
+# --- 2. YAN MENÜ (KONTROL MERKEZİ) ---
+with st.sidebar:
+    st.markdown("# 🦅 BAZ BAGER")
+    st.caption("Sahibi: Aykut Kutpınar")
+    st.divider()
+    st.write("🎙️ **Sesli Komut:**")
+    # Mikrofon: Konuşma bittiğinde otomatik algılar
+    voice_input = speech_to_text(
+        language='tr', 
+        start_prompt="Dokun ve Konuş", 
+        stop_prompt="Dinliyorum...", 
+        just_once=True, 
+        key='bager_mic_fixed'
+    )
+    st.divider()
+    if st.button("Sohbeti Sıfırla"):
+        st.session_state.messages = []
+        st.rerun()
+
+# --- 3. SİSTEM ÇEKİRDEĞİ ---
 if "GROQ_API_KEY" not in st.secrets:
     st.error("Secrets kısmına GROQ_API_KEY ekleyin.")
     st.stop()
@@ -21,23 +46,7 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- 3. ANA EKRAN: KONUŞMA DÜĞMESİ (MİKROFON) ---
-st.markdown("<h2 style='text-align: center;'>🦅 BAZ BAGER</h2>", unsafe_allow_html=True)
-st.write("🎙️ **Sesli Komut Vermek İçin Dokun:**")
-
-# Görsel 1768816481393'teki butonu merkeze sabitledik
-voice_input = speech_to_text(
-    language='tr',
-    start_prompt="🔴 KONUŞMAYI BAŞLAT",
-    stop_prompt="⏳ DİNLİYORUM... (Susunca Biter)",
-    just_once=True,
-    key='bager_mic_final'
-)
-
-st.divider()
-
-# --- 4. SOHBET AKIŞI (MESAJLARI GÖSTER) ---
-# Boş ekran hatasını önlemek için mesajlar döngüsü her zaman çalışır
+# --- 4. SOHBET AKIŞI ---
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         m_cont = str(m["content"])
@@ -46,14 +55,14 @@ for m in st.session_state.messages:
         else:
             st.markdown(m_cont)
 
-# --- 5. GİRİŞ KONTROLÜ (SES VEYA METİN) ---
+# --- 5. GİRİŞ YÖNETİMİ ---
 query = None
 if voice_input:
     query = voice_input
-elif text_box := st.chat_input("Emret Aykut Bey..."):
-    query = text_box
+elif txt_input := st.chat_input("Emret Aykut Bey..."):
+    query = txt_input
 
-# --- 6. İŞLEM MERKEZİ (ZEKÂ VE RESİM) ---
+# --- 6. İŞLEM MERKEZİ ---
 if query:
     st.session_state.messages.append({"role": "user", "content": query})
     with st.chat_message("user"):
@@ -63,26 +72,25 @@ if query:
         q_low = query.lower()
         res_text = ""
 
-        # A) KİMLİK: Aykut Kutpınar (Resimden önce kontrol edilir)
-        ids = ["kim tasarladı", "sahibin", "seni kim", "yaratıcın", "ismin ne"]
-        if any(x in q_low for x in ids):
+        # A) KİMLİK: Aykut Kutpınar (Resim motorundan önce çalışır, Görsel 1768810020603 hatasını önler)
+        id_keys = ["kim tasarladı", "sahibin", "seni kim", "yaratıcın", "ismin ne"]
+        if any(x in q_low for x in id_keys):
             res_text = "Beni tasarlayan ve tek sahibim Aykut Kutpınar'dır."
             st.markdown(res_text)
 
-        # B) RESİM: Pollinations HQ
+        # B) RESİM: Pollinations HQ (Görsel 1768809545608 hatasını önler)
         elif any(x in q_low for x in ["resim", "çiz", "görsel", "tasarla"]):
             try:
                 seed = random.randint(1, 1000000)
                 url = f"https://image.pollinations.ai/prompt/{query.replace(' ', '%20')}?width=1024&height=1024&seed={seed}&nologo=true"
-                st.image(url, caption="Bager'in Tasarımı")
-                res_text = url # URL'yi hafızaya ekliyoruz
+                st.image(url, caption="Bager Tasarımı")
+                res_text = url 
             except:
-                st.error("Görsel servisi şu an meşgul.")
+                st.error("Görsel motoru şu an meşgul.")
         
         # C) ZEKA: Llama 3.3 70B
         else:
             try:
-                # Geçmişi zekaya gönderirken resimleri filtrele
                 hist = [{"role": "system", "content": "Sen BAZ BAGER'sin. Sahibin Aykut Kutpınar. Çok zeki ve kısa cevap ver."}]
                 for m in st.session_state.messages:
                     if "http" not in str(m["content"]):
@@ -92,9 +100,9 @@ if query:
                 res_text = comp.choices[0].message.content
                 st.markdown(res_text)
             except Exception as e:
-                st.error(f"Zekâ Hatası: {e}")
+                st.error(f"Sistem Hatası: {e}")
 
-        # Hafızaya ekle ve sesli yanıt ver
+        # Hafızaya ekle ve sesli yanıt (Görsel 1768816646779 tarzı)
         if res_text:
             st.session_state.messages.append({"role": "assistant", "content": res_text})
             if "http" not in res_text:
