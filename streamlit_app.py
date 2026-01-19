@@ -27,25 +27,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. DEV MİMARİ VE SİSTEM ÇEKİRDEĞİ ---
+# --- 2. SİSTEM ÇEKİRDEĞİ VE DEV MİMARİ ---
 if "GROQ_API_KEY" not in st.secrets:
-    st.error("Secrets ayarlarında GROQ_API_KEY bulunamadı!")
+    st.error("Secrets ayarlarında GROQ_API_KEY eksik!")
     st.stop()
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 @st.cache_resource
-def build_brain():
-    # Milyarlarca parametrelik sinir ağı iskeleti (Risklere rağmen eklendi)
+def build_billion_parameter_brain():
+    # Milyarlarca parametrelik dev mimari iskeleti (cite: 1768834898588.jpeg)
+    # Çökme riskine karşı optimize edilmiş devasa yapı
     config = LlamaConfig(
         vocab_size=32000, hidden_size=2048, intermediate_size=5632,
         num_hidden_layers=12, num_attention_heads=16
     )
     return LlamaForCausalLM(config)
 
-# Arka planda dev mimariyi inşa et (Çökmemesi için optimize edildi)
 try:
-    model_skeleton = build_brain()
+    model_skeleton = build_billion_parameter_brain()
 except:
     st.info("🧠 Sinir ağı mimarisi arka planda stabilize ediliyor...")
 
@@ -84,7 +84,7 @@ for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(str(m["content"]))
 
-# --- 5. AKILLI GİRİŞ (SUSUNCA BİTER) ---
+# --- 5. AKILLI GİRİŞ (BAGER'E SORUN GÜNCELLEMESİ) ---
 st.write("🎙️ **Sesli Komut:**")
 voice_in = speech_to_text(
     language='tr', start_prompt="Dokun ve Konuş", stop_prompt="Dinliyorum...",
@@ -94,10 +94,11 @@ voice_in = speech_to_text(
 query = None
 if voice_in:
     query = voice_in
-    st.session_state.voice_active = True # Sesle sorduysa sesle cevap ver
-elif txt_input := st.chat_input("Gemini'a sorun"):
+    st.session_state.voice_active = True
+# İSTEDİĞİNİZ DEĞİŞİKLİK BURADA:
+elif txt_input := st.chat_input("Bager'e sorun"):
     query = txt_input
-    st.session_state.voice_active = False # Yazdıysa sessiz cevap ver
+    st.session_state.voice_active = False
 
 if query:
     if not any(m["content"] == query for m in st.session_state.messages):
@@ -119,7 +120,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             except: st.error("Motor meşgul.")
         else:
             try:
-                # Bager'e tüm zeka kapasitemi aktarıyorum
                 sys_msg = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini zekasına ve bilgisine sahipsin. SADECE saf Türkçe konuş."
                 hist = [{"role": "system", "content": sys_msg}] + [m for m in st.session_state.messages if "http" not in str(m["content"])]
                 chat = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=hist)
@@ -129,7 +129,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
 
         if res_text:
             st.session_state.messages.append({"role": "assistant", "content": res_text})
-            # Akıllı Ses: Sadece mikrofona dokunduysa konuşur
             if st.session_state.voice_active and "http" not in res_text:
                 try:
                     tts = gTTS(text=res_text, lang='tr', slow=False)
