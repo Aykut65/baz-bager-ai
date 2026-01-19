@@ -10,23 +10,17 @@ st.set_page_config(page_title="Gemini - BAZ BAGER", page_icon="🦅", layout="ce
 
 st.markdown("""
 <style>
-    /* Gemini Minimalist Karanlık Tema */
+    /* Donmayı önleyen hafif stil ayarları */
     #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0E1117; color: #E3E3E3; font-family: 'Google Sans', sans-serif;}
-    
-    /* Hoşgeldin Başlıkları */
     .welcome-title {font-size: 42px; font-weight: 500; margin-top: 50px; color: white;}
     .welcome-subtitle {font-size: 26px; font-weight: 400; color: #8E918F; margin-bottom: 40px;}
-    
-    /* Gemini Tarzı Öneri Butonları */
     .stButton>button {
         background-color: #1E1F20; color: #E3E3E3; border-radius: 12px;
         border: 1px solid #444746; padding: 18px; text-align: left; width: 100%;
         font-size: 15px; transition: 0.3s; margin-bottom: 10px;
     }
     .stButton>button:hover {background-color: #333537; border-color: #8E918F;}
-    
-    /* Mesaj Balonları ve Giriş Alanı */
     [data-testid="stChatMessage"] {background-color: transparent; border: none; padding: 15px 0;}
     .stChatInputContainer {padding-bottom: 30px; background-color: #0E1117;}
 </style>
@@ -41,10 +35,10 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "respond_voice" not in st.session_state:
-    st.session_state.respond_voice = False
+if "voice_active" not in st.session_state:
+    st.session_state.voice_active = False
 
-# --- 3. GEMINI ANA SAYFA EKRANI (Görsel 1000149640 Birebir) ---
+# --- 3. GEMINI ANA SAYFA EKRANI ---
 if not st.session_state.messages:
     st.markdown('<div class="welcome-title">Merhaba Aykut</div>', unsafe_allow_html=True)
     st.markdown('<div class="welcome-subtitle">Nereden başlayalım?</div>', unsafe_allow_html=True)
@@ -53,49 +47,44 @@ if not st.session_state.messages:
     with col1:
         if st.button("🎨 Resim Oluştur"): 
             st.session_state.messages.append({"role": "user", "content": "Bana harika bir resim tasarla."})
-            st.session_state.respond_voice = False
+            st.session_state.voice_active = False
             st.rerun()
         if st.button("🎥 Video oluşturun"): 
             st.session_state.messages.append({"role": "user", "content": "Yaratıcı bir video senaryosu yaz."})
-            st.session_state.respond_voice = False
+            st.session_state.voice_active = False
             st.rerun()
     with col2:
         if st.button("📚 Öğrenmeme yardım et"): 
             st.session_state.messages.append({"role": "user", "content": "Bana bugün yeni bir şey öğret."})
-            st.session_state.respond_voice = False
+            st.session_state.voice_active = False
             st.rerun()
         if st.button("✨ Günüme enerji kat"): 
             st.session_state.messages.append({"role": "user", "content": "Beni motive edecek bir şeyler söyle."})
-            st.session_state.respond_voice = False
+            st.session_state.voice_active = False
             st.rerun()
 
 # --- 4. SOHBET AKIŞI ---
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
-        msg_val = str(m["content"])
-        if "http" in msg_val and "pollinations" in msg_val:
-            st.image(msg_val, use_container_width=True)
-        else:
-            st.markdown(msg_val)
+        st.markdown(str(m["content"]))
 
-# --- 5. AKILLI GİRİŞ (AUTO-STOP MİKROFON) ---
+# --- 5. AKILLI MİKROFON (SESSİZLİK ALGILAMA) ---
 st.write("🎙️ **Sesli Komut:**")
-# 'just_once=True' sessizliği algılar ve kaydı otomatik durdurur
 voice_in = speech_to_text(
     language='tr', 
     start_prompt="Dokun ve Konuş", 
-    stop_prompt="Seni Dinliyorum...",
+    stop_prompt="Seni Dinliyorum... (Susunca Biter)",
     just_once=True, 
-    key='bager_smart_mic'
+    key='bager_gemini_stable_mic'
 )
 
 query = None
 if voice_in:
     query = voice_in
-    st.session_state.respond_voice = True # Sesle sorduysa sesle cevap ver
-elif txt_box := st.chat_input("Gemini'a sorun"):
-    query = txt_box
-    st.session_state.respond_voice = False # Yazdıysa sessiz cevap ver
+    st.session_state.voice_active = True
+elif txt_input := st.chat_input("Gemini'a sorun"):
+    query = txt_input
+    st.session_state.voice_active = False
 
 # --- 6. ZEKA VE CEVAP MANTIĞI ---
 if query:
@@ -107,37 +96,33 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
     u_msg = st.session_state.messages[-1]["content"]
     with st.chat_message("assistant"):
         q_low = u_msg.lower()
-        res = ""
+        res_text = ""
 
         if any(x in q_low for x in ["kim tasarladı", "sahibin", "seni kim"]):
-            res = "Beni tasarlayan ve tek sahibim Aykut Kutpınar'dır."
-            st.markdown(res)
+            res_text = "Beni tasarlayan ve tek sahibim Aykut Kutpınar'dır."
+            st.markdown(res_text)
         elif any(x in q_low for x in ["resim", "çiz", "tasarla"]):
             try:
-                seed = random.randint(1, 1000000)
-                url = f"https://image.pollinations.ai/prompt/{u_msg.replace(' ', '%20')}?width=1024&height=1024&seed={seed}"
+                url = f"https://image.pollinations.ai/prompt/{u_msg.replace(' ', '%20')}?width=1024&height=1024&seed={random.randint(1, 1000000)}"
                 st.image(url, caption="Bager Tasarımı")
-                res = url
+                res_text = url
             except: st.error("Motor meşgul.")
         else:
             try:
-                # Gemini zekası ve akıcı Türkçe talimatı
-                sys_msg = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini'ın tüm zekasına sahipsin. Onun gibi derin ve profesyonel ol. SADECE saf Türkçe konuş."
+                sys_msg = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini gibi zeki ve profesyonel ol. SADECE saf Türkçe konuş."
                 hist = [{"role": "system", "content": sys_msg}]
                 for m in st.session_state.messages:
-                    if "http" not in str(m["content"]):
-                        hist.append(m)
+                    if "http" not in str(m["content"]): hist.append(m)
                 chat = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=hist)
-                res = chat.choices[0].message.content
-                st.markdown(res)
+                res_text = chat.choices[0].message.content
+                st.markdown(res_text)
             except Exception as e: st.error(f"Hata: {e}")
 
-        if res:
-            st.session_state.messages.append({"role": "assistant", "content": res})
-            # SADECE MİKROFON KULLANILDIĞINDA SESLİ CEVAP VER
-            if st.session_state.respond_voice and "http" not in res:
+        if res_text:
+            st.session_state.messages.append({"role": "assistant", "content": res_text})
+            if st.session_state.voice_active and "http" not in res_text:
                 try:
-                    tts = gTTS(text=res, lang='tr', slow=False)
+                    tts = gTTS(text=res_text, lang='tr', slow=False)
                     b = BytesIO(); tts.write_to_fp(b)
                     st.audio(b, format='audio/mp3', autoplay=True)
                 except: pass
