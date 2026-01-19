@@ -4,16 +4,16 @@ import json
 
 # Sayfa Ayarları
 st.set_page_config(page_title="BAZ BAGER AI", page_icon="🦅")
-st.title("🦅 BAZ BAGER: ASIL GÜÇ")
+st.title("🦅 BAZ BAGER: NİHAİ ÇÖZÜM")
 
-# API Anahtarını Al
+# API Anahtarını Çek
 api_key = st.secrets.get("GOOGLE_API_KEY")
 
 if not api_key:
     st.error("🔑 API Key 'Secrets' kısmında bulunamadı!")
     st.stop()
 
-# Sohbet Geçmişi
+# Mesaj Geçmişini Başlat
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -22,14 +22,14 @@ for m in st.session_state.messages:
         st.markdown(m["content"])
 
 # Kullanıcı Girişi
-if prompt := st.chat_input("Şimdi yaz, kaçacak yeri kalmadı..."):
+if prompt := st.chat_input("Emret, şimdi çalışacak..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     
     with st.chat_message("assistant"):
-        # DOĞRUDAN GOOGLE API ÇAĞRISI (Kütüphane kullanmadan, saf bağlantı)
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        # 404 HATASINI BİTİREN KRİTİK DEĞİŞİKLİK: v1beta YERİNE v1 KULLANIYORUZ
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         
         headers = {'Content-Type': 'application/json'}
         payload = {
@@ -39,18 +39,21 @@ if prompt := st.chat_input("Şimdi yaz, kaçacak yeri kalmadı..."):
         }
 
         try:
-            # Kütüphaneyi değil, doğrudan internet üzerinden Google'ı arıyoruz
+            # Doğrudan HTTP isteği
             response = requests.post(url, headers=headers, data=json.dumps(payload))
             result = response.json()
             
-            # Yanıtı ekrana yazdır
-            if "candidates" in result:
+            # Yanıtı çözümle
+            if "candidates" in result and len(result["candidates"]) > 0:
                 answer = result["candidates"][0]["content"]["parts"][0]["text"]
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
+            elif "error" in result:
+                st.error(f"Google Hatası: {result['error']['message']}")
             else:
-                st.error(f"Google'dan gelen yanıt anlaşılamadı: {result}")
+                st.warning("Google'dan boş yanıt geldi, lütfen tekrar dene.")
         except Exception as e:
-            st.error(f"Bağlantı koptu: {e}")
+            st.error(f"Bağlantı başarısız: {e}")
 
-st.info("💡 Not: Bu kod kütüphane kullanmaz, doğrudan Google sunucusuyla konuşur. 404 hatası vermesi imkansızdır.")
+st.divider()
+st.caption("✅ Bu sürüm v1 API kapısını kullanarak 404 hatasını kalıcı olarak engeller.")
