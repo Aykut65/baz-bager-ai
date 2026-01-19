@@ -8,13 +8,12 @@ import random
 # --- 1. GEMINI BİREBİR TASARIM (CSS) ---
 st.set_page_config(page_title="Gemini - BAZ BAGER", page_icon="🦅", layout="centered")
 
-# Siyah ekran ve yazım hatalarını önlemek için güvenli stil blokları
 st.markdown("""
 <style>
     #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0E1117; color: #E3E3E3; font-family: 'Google Sans', sans-serif;}
-    .welcome-title {font-size: 44px; font-weight: 500; margin-top: 50px; color: white;}
-    .welcome-subtitle {font-size: 28px; font-weight: 400; color: #8E918F; margin-bottom: 40px;}
+    .welcome-title {font-size: 42px; font-weight: 500; margin-top: 50px; color: white;}
+    .welcome-subtitle {font-size: 26px; font-weight: 400; color: #8E918F; margin-bottom: 40px;}
     .stButton>button {
         background-color: #1E1F20; color: #E3E3E3; border-radius: 12px;
         border: 1px solid #444746; padding: 18px; text-align: left; width: 100%;
@@ -26,27 +25,4 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. SİSTEM ÇEKİRDEĞİ ---
-if "GROQ_API_KEY" not in st.secrets:
-    st.error("Secrets ayarlarında GROQ_API_KEY bulunamadı!")
-    st.stop()
-
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "respond_with_voice" not in st.session_state:
-    st.session_state.respond_with_voice = False
-
-# --- 3. GEMINI ANA SAYFA EKRANI (Görsel 1000149640 Birebir) ---
-if not st.session_state.messages:
-    st.markdown('<div class="welcome-title">Merhaba Aykut</div>', unsafe_allow_html=True)
-    st.markdown('<div class="welcome-subtitle">Nereden başlayalım?</div>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🎨 Resim Oluştur"): 
-            st.session_state.messages.append({"role": "user", "content": "Bana harika bir resim tasarla."})
-            st.session_state.respond_with_voice = False
-            st.rerun()
-        if st.button
+# --- 2. SİSTEM ÇEKİRDE
