@@ -1,24 +1,37 @@
 import streamlit as st
-import requests
-import json
+from groq import Groq
 
-st.set_page_config(page_title="BAZ BAGER", page_icon="🦅")
-st.title("🦅 BAZ BAGER: SON DENEME")
+# Sayfa Yapılandırması
+st.set_page_config(page_title="BAZ BAGER AI", page_icon="🦅")
+st.title("🦅 BAZ BAGER: LLAMA 3 GÜCÜ")
 
-api_key = st.secrets.get("GOOGLE_API_KEY")
+# Anahtar Kontrolü
+api_key = st.secrets.get("GROQ_API_KEY")
+if not api_key:
+    st.error("🔑 Groq API Key bulunamadı! Secrets kısmını kontrol edin.")
+    st.stop()
 
-if prompt := st.chat_input("Buraya bir kelime yaz..."):
+client = Groq(api_key=api_key)
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for m in st.session_state.messages:
+    with st.chat_message(m["role"]): st.markdown(m["content"])
+
+if prompt := st.chat_input("Llama 3 motoru hazır, emret..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
+    
     with st.chat_message("assistant"):
-        # MODEL İSMİNİ EN ESKİ VE EN KARARLI HALİNE ÇEKTİM (v1beta/models/gemini-pro)
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
-        payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        
         try:
-            response = requests.post(url, json=payload)
-            result = response.json()
-            # Yanıtı doğrudan yazdır, hata yakalamayı bile en aza indir
-            answer = result["candidates"][0]["content"]["parts"][0]["text"]
-            st.markdown(answer)
+            # Meta Llama 3 modeliyle bağlantı
+            completion = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+            )
+            response = completion.choices[0].message.content
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
-            st.error(f"Google yanıt vermiyor: {result if 'result' in locals() else e}")
+            st.error(f"Sistem Hatası: {e}")
