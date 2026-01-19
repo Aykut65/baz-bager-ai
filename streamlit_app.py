@@ -5,22 +5,22 @@ from io import BytesIO
 from streamlit_mic_recorder import speech_to_text
 import random
 
-# --- 1. GEMINI TARZI ULTRA MODERN TASARIM ---
+# --- 1. SAYFA VE MODERN TASARIM AYARLARI ---
 st.set_page_config(page_title="BAZ BAGER", page_icon="🦅", layout="centered")
 
-# CSS: Gereksiz her şeyi gizler, sadece şık bir sohbet akışı bırakır
+# Gemini/ChatGPT tarzı minimalist CSS
 st.markdown("""
 <style>
     #MainMenu, footer, header {visibility: hidden;}
-    .stApp {background-color: #0E1117; color: #FFFFFF; font-family: 'Inter', sans-serif;}
+    .stApp {background-color: #0E1117; color: #FFFFFF;}
     [data-testid="stChatMessage"] {background-color: transparent; border: none; padding: 20px 0; max-width: 800px; margin: 0 auto;}
     .stChatInputContainer {padding-bottom: 30px; background-color: #0E1117;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. SİSTEM ÇEKİRDEĞİ VE HAFIZA ---
+# --- 2. SİSTEM ÇEKİRDEĞİ ---
 if "GROQ_API_KEY" not in st.secrets:
-    st.error("Secrets ayarlarında GROQ_API_KEY bulunamadı!")
+    st.error("Secrets ayarlarına GROQ_API_KEY eklenmemiş!")
     st.stop()
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
@@ -37,8 +37,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 4. SOHBET AKIŞI ---
-# Boş ekran hatasını önlemek için geçmişi en başta yüklüyoruz
+# --- 4. SOHBET AKIŞI (EKRAN YÜKLEMESİ) ---
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         msg_val = str(m["content"])
@@ -47,22 +46,22 @@ for m in st.session_state.messages:
         else:
             st.markdown(msg_val)
 
-# --- 5. AKILLI MİKROFON (SEN SUSUNCA OTOMATİK CEVAP VERİR) ---
-# 'just_once=True' ile konuşman bittiği an Bager hemen cevap üretmeye başlar
+# --- 5. AKILLI MİKROFON (SUSUNCA OTOMATİK İŞLER) ---
+# 'just_once=True' ile sustuğunuz an kaydı bitirip hemen cevaba geçer.
 st.write("🎙️ **Sesli Komut:**")
 voice_input = speech_to_text(
     language='tr',
     start_prompt="Konuşmak için Dokun",
-    stop_prompt="Seni dinliyorum Aykut Bey...",
+    stop_prompt="Seni Dinliyorum Aykut Bey...",
     just_once=True, 
-    key='bager_smart_mic_final'
+    key='bager_master_mic'
 )
 
 # --- 6. GİRİŞ VE CEVAP MANTIĞI ---
 query = None
 if voice_input:
     query = voice_input
-elif txt_input := st.chat_input("Gemini gibi akıcı... Buraya yazın"):
+elif txt_input := st.chat_input("Bir şeyler yazın Aykut Bey..."):
     query = txt_input
 
 if query:
@@ -92,8 +91,8 @@ if query:
         # C) ÜSTÜN ZEKA (SAF TÜRKÇE VE AKICILIK)
         else:
             try:
-                # 'Hatalı cümle' sorununu çözmek için sistem talimatını çok sertleştirdik
-                sys_inst = "Sen BAZ BAGER'sin. Sahibin Aykut Kutpınar. SADECE saf ve düzgün bir Türkçe konuş. Asla robot gibi tane tane konuşma, tıpkı Gemini gibi akıcı ve profesyonel ol."
+                # 'Hatalı kelime' sorununu çözmek için sistem talimatı güçlendirildi.
+                sys_inst = "Sen BAZ BAGER'sin. Sahibin Aykut Kutpınar. SADECE saf, akıcı ve profesyonel bir Türkçe konuş. Asla robot gibi tane tane konuşma ve başka dil karıştırma."
                 history = [{"role": "system", "content": sys_inst}]
                 for m in st.session_state.messages:
                     if "http" not in str(m["content"]):
@@ -103,14 +102,14 @@ if query:
                 res_text = chat.choices[0].message.content
                 st.markdown(res_text)
             except Exception as e:
-                st.error(f"Sistem Hatası: {e}")
+                st.error(f"Zeka Hatası: {e}")
 
         # Hafızaya Kaydet ve Hızlı Seslendir
         if res_text:
             st.session_state.messages.append({"role": "assistant", "content": res_text})
+            # Sadece metin ise seslendir (Hızlı ve Akıcı)
             if "http" not in res_text:
                 try:
-                    # 'slow=False' ile tane tane konuşma sorununu çözüyoruz
                     tts = gTTS(text=res_text, lang='tr', slow=False)
                     b = BytesIO()
                     tts.write_to_fp(b)
