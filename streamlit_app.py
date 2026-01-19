@@ -1,12 +1,12 @@
 import streamlit as st
 from groq import Groq
-import random
+import requests
 
-# Sayfa Yapılandırması
-st.set_page_config(page_title="BAZ BAGER ULTRA", page_icon="🦅", layout="wide")
-st.title("🦅 BAZ BAGER: ZEKÂ VE SANAT")
+# Sayfa Ayarları
+st.set_page_config(page_title="BAZ BAGER ULTRA", page_icon="🦅", layout="centered")
+st.title("🦅 BAZ BAGER: AKTİF")
 
-# API Anahtarı Kontrolü
+# API Anahtarı
 api_key = st.secrets.get("GROQ_API_KEY")
 if not api_key:
     st.error("🔑 API Anahtarı eksik!")
@@ -17,40 +17,44 @@ client = Groq(api_key=api_key)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mesaj Geçmişini Göster
+# Mesajları Ekrana Bas
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
 # KULLANICI GİRİŞİ
-if prompt := st.chat_input("Bir şeyler sor veya '... resmi çiz' de..."):
+if prompt := st.chat_input("Bir şeyler sor veya resim iste..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # YETENEK 1: RESİM ÇİZME (Eğer kullanıcı resim isterse)
-        if "resim" in prompt.lower() or "çiz" in prompt.lower() or "görsel" in prompt.lower():
-            with st.spinner("🎨 Bager sanatını konuşturuyor..."):
-                # Pollinations.ai üzerinden yüksek kaliteli ve hızlı resim üretimi
-                seed = random.randint(1, 100000)
-                image_url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024&seed={seed}"
-                st.image(image_url, caption=f"🦅 Bager'in Başyapıtı: {prompt}", use_container_width=True)
+        # KRİTİK DEĞİŞİKLİK: Resim isteğini daha hassas yakalıyoruz
+        trigger_words = ["çiz", "resim", "görsel", "fotoğraf", "image", "paint"]
+        if any(word in prompt.lower() for word in trigger_words):
+            try:
+                # Daha güvenilir bir resim motoruna geçtik
+                image_url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}?width=1024&height=1024&nologo=true"
+                
+                # Resmi önce göster, sonra hafızaya kaydet
+                st.image(image_url, caption="🦅 Bager senin için çizdi.")
                 st.session_state.messages.append({"role": "assistant", "content": f"![Görsel]({image_url})"})
+            except Exception as e:
+                st.error("Resim motoru şu an meşgul, lütfen tekrar dene.")
         
-        # YETENEK 2: ÜST DÜZEY ZEKÂ (Llama 3.3 70B)
         else:
+            # Zekâ Modu (Llama 3.3 70B)
             try:
                 completion = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
-                        {"role": "system", "content": "Sen BAZ BAGER'sin. Dünyanın en zeki ve yetenekli yapay zekasısın. Hem derin analizler yaparsın hem de sanatsal bir ruhun vardır."},
+                        {"role": "system", "content": "Sen BAZ BAGER'sin. Çok zeki ve her emri ikiletmeden yerine getiren bir asistansın."},
                         *[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
                     ],
-                    temperature=0.6,
+                    temperature=0.5
                 )
                 response = completion.choices[0].message.content
                 st.markdown(response)
                 st.session_state.messages.append({"role": "assistant", "content": response})
             except Exception as e:
-                st.error(f"Zekâ Hattında Sorun: {e}")
+                st.error(f"Zekâ hatası: {e}")
