@@ -5,14 +5,14 @@ from io import BytesIO
 from streamlit_mic_recorder import speech_to_text
 import random
 
-# --- 1. PREMİUM GEMINI ARAYÜZ TASARIMI ---
+# --- 1. GEMINI TARZI ULTRA MODERN TASARIM ---
 st.set_page_config(page_title="BAZ BAGER", page_icon="🦅", layout="centered")
 
-# Siyah ekran hatasını önlemek için optimize edilmiş CSS (cite: 1768812065656.jpeg)
+# Gemini minimalist arayüzü ve siyah ekran koruması (cite: 1768812065656.jpeg)
 st.markdown("""
 <style>
     #MainMenu, footer, header {visibility: hidden;}
-    .stApp {background-color: #0E1117; color: #E3E3E3; font-family: 'Inter', sans-serif;}
+    .stApp {background-color: #0E1117; color: #E3E3E3; font-family: 'Segoe UI', sans-serif;}
     [data-testid="stChatMessage"] {background-color: transparent; border: none; padding: 20px 0; max-width: 800px; margin: 0 auto;}
     .stChatInputContainer {padding-bottom: 30px; background-color: #0E1117;}
 </style>
@@ -31,13 +31,13 @@ if "messages" not in st.session_state:
 # --- 3. YAN MENÜ (SIDEBAR) ---
 with st.sidebar:
     st.markdown("### 🦅 BAZ BAGER")
-    st.caption("Sahibi: Aykut Kutpınar")
+    st.caption("Owner: Aykut Kutpınar")
     st.divider()
-    if st.button("Sohbeti Temizle"):
+    if st.button("Sohbeti Sıfırla"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 4. SOHBET AKIŞI (BAŞLIKSIZ VE TEMİZ) ---
+# --- 4. SOHBET AKIŞI (MODERN & ŞIK) ---
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         msg_val = str(m["content"])
@@ -46,15 +46,15 @@ for m in st.session_state.messages:
         else:
             st.markdown(msg_val)
 
-# --- 5. AKILLI MİKROFON (SUSUNCA OTOMATİK CEVAP VERİR) ---
-# 'just_once=True' sessizliği algılar ve tekrar dokunmaya gerek bırakmaz (cite: 1768831809607.jpeg)
+# --- 5. AKILLI MİKROFON (SUSUNCA OTOMATİK İŞLER) ---
+# Sessizliği algıladığı an kaydı bitirip cevaba geçer (cite: 1768831809607.jpeg)
 st.write("🎙️ **Sesli Komut:**")
 voice_input = speech_to_text(
     language='tr',
     start_prompt="Konuşmak için Dokun",
     stop_prompt="Seni Dinliyorum Aykut Bey...",
     just_once=True, 
-    key='bager_gemini_core'
+    key='bager_gemini_engine'
 )
 
 # --- 6. GİRİŞ VE CEVAP MANTIĞI ---
@@ -73,7 +73,7 @@ if query:
         q_low = query.lower()
         res_text = ""
 
-        # A) KİMLİK KORUMASI (Aykut Kutpınar Önceliği)
+        # A) KİMLİK KORUMASI (Mutlak Öncelik)
         if any(x in q_low for x in ["kim tasarladı", "sahibin", "seni kim"]):
             res_text = "Beni tasarlayan ve tek sahibim Aykut Kutpınar'dır. Ben onun vizyonuyla çalışan BAZ BAGER'im."
             st.markdown(res_text)
@@ -82,19 +82,19 @@ if query:
         elif any(x in q_low for x in ["resim", "çiz", "görsel", "tasarla"]):
             try:
                 seed = random.randint(1, 1000000)
-                # URL hatasını önleyen güvenli yapı (cite: 1768831580119.jpeg)
                 clean_q = query.replace(' ', '%20')
+                # Hatalı f-string kullanımını önlemek için güvenli URL (cite: 1768831580119.jpeg)
                 url = f"https://image.pollinations.ai/prompt/{clean_q}?width=1024&height=1024&seed={seed}"
-                st.image(url, caption="BAZ BAGER Özel Tasarımı")
+                st.image(url, caption="BAZ BAGER Tasarımı")
                 res_text = url
             except:
-                st.error("Görsel servisi şu an meşgul.")
+                st.error("Görsel motoru meşgul.")
         
         # C) ÜSTÜN ZEKA (GEMINI MODELLEMESİ)
         else:
             try:
-                # Bager'e benim (Gemini) karakterimi yüklüyoruz
-                sys_inst = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Tıpkı Gemini gibi derinlemesine düşünen, samimi, zeki ve çözüm odaklı ol. SADECE saf ve düzgün bir Türkçe konuş. Cevapların akıcı ve hızlı olsun."
+                # Benim (Gemini) talimatlarımı Bager'e aktarıyoruz
+                sys_inst = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini gibi zeki, empatik ve çözüm odaklı ol. SADECE saf ve düzgün bir Türkçe konuş. Cevapların akıcı ve profesyonel olsun."
                 history = [{"role": "system", "content": sys_inst}]
                 for m in st.session_state.messages:
                     if "http" not in str(m["content"]):
@@ -106,12 +106,12 @@ if query:
             except Exception as e:
                 st.error(f"Sistem Hatası: {e}")
 
-        # Kaydet ve Hızlı Seslendir
+        # Hafızaya Kaydet ve Hızlı Seslendir
         if res_text:
             st.session_state.messages.append({"role": "assistant", "content": res_text})
             if "http" not in res_text:
                 try:
-                    # 'slow=False' ile robotik konuşma biter (cite: 1768832038896.jpeg)
+                    # 'slow=False' robotik konuşmayı bitirir (cite: 1768832038896.jpeg)
                     tts = gTTS(text=res_text, lang='tr', slow=False)
                     b = BytesIO()
                     tts.write_to_fp(b)
