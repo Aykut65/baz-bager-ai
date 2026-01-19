@@ -5,12 +5,11 @@ from io import BytesIO
 from streamlit_mic_recorder import speech_to_text
 import random
 
-# --- 1. GEMINI BİREBİR TASARIM (CSS) ---
+# --- 1. GEMINI BİREBİR TASARIM ---
 st.set_page_config(page_title="Gemini - BAZ BAGER", page_icon="🦅", layout="centered")
 
 st.markdown("""
 <style>
-    /* Gemini Minimalist Karanlık Tema */
     #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0E1117; color: #E3E3E3; font-family: 'Google Sans', sans-serif;}
     .welcome-title {font-size: 42px; font-weight: 500; margin-top: 50px; color: white;}
@@ -28,7 +27,7 @@ st.markdown("""
 
 # --- 2. SİSTEM ÇEKİRDEĞİ ---
 if "GROQ_API_KEY" not in st.secrets:
-    st.error("Secrets ayarlarında GROQ_API_KEY eksik!")
+    st.error("Secrets ayarlarında GROQ_API_KEY bulunamadı!")
     st.stop()
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
@@ -68,11 +67,11 @@ for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(str(m["content"]))
 
-# --- 5. AKILLI MİKROFON (SUSUNCA OTOMATİK BİTER) ---
+# --- 5. AKILLI GİRİŞ SİSTEMİ ---
 st.write("🎙️ **Sesli Komut:**")
 voice_in = speech_to_text(
-    language='tr', start_prompt="Dokun ve Konuş", stop_prompt="Dinliyorum...",
-    just_once=True, key='bager_stable_final'
+    language='tr', start_prompt="Konuşmak için Dokun", stop_prompt="Dinliyorum...",
+    just_once=True, key='bager_final_mic'
 )
 
 query = None
@@ -92,32 +91,18 @@ if query:
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     u_msg = st.session_state.messages[-1]["content"]
     with st.chat_message("assistant"):
-        q_low = u_msg.lower()
-        res_text = ""
-
-        # Resim Üretimi
-        if any(x in q_low for x in ["resim", "çiz", "tasarla"]):
-            try:
-                url = f"https://image.pollinations.ai/prompt/{u_msg.replace(' ', '%20')}?width=1024&height=1024&seed={random.randint(1, 10**6)}"
-                st.image(url, caption="BAZ BAGER Sanatı")
-                res_text = url
-            except: st.error("Motor meşgul.")
-        # Gemini Zekası
-        else:
-            try:
-                sys_msg = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini zekasına ve bilgisine sahipsin. SADECE saf Türkçe konuş."
-                hist = [{"role": "system", "content": sys_msg}]
-                for m in st.session_state.messages:
-                    if "http" not in str(m["content"]): hist.append(m)
-                chat = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=hist)
-                res_text = chat.choices[0].message.content
-                st.markdown(res_text)
-            except Exception as e: st.error(f"Hata: {e}")
-
-        if res_text:
-            st.session_state.messages.append({"role": "assistant", "content": res_text})
-            if st.session_state.voice_active and "http" not in res_text:
-                try:
-                    tts = gTTS(text=res_text, lang='tr', slow=False)
-                    b = BytesIO(); tts.write_to_fp(b); st.audio(b, format='audio/mp3', autoplay=True)
-                except: pass
+        try:
+            sys_msg = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini zekasına ve bilgisine sahipsin. SADECE saf Türkçe konuş."
+            hist = [{"role": "system", "content": sys_msg}]
+            for m in st.session_state.messages:
+                if "http" not in str(m["content"]): hist.append(m)
+            
+            chat = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=hist)
+            ans = chat.choices[0].message.content
+            st.markdown(ans)
+            
+            st.session_state.messages.append({"role": "assistant", "content": ans})
+            if st.session_state.voice_active:
+                tts = gTTS(text=ans, lang='tr', slow=False)
+                b = BytesIO(); tts.write_to_fp(b); st.audio(b, format='audio/mp3', autoplay=True)
+        except Exception as e: st.error(f"Hata: {e}")
