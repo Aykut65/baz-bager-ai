@@ -1,6 +1,4 @@
 import streamlit as st
-import torch
-from transformers import LlamaConfig, LlamaForCausalLM
 from groq import Groq
 from gtts import gTTS
 from io import BytesIO
@@ -27,27 +25,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. SİSTEM ÇEKİRDEĞİ VE DEV MİMARİ ---
+# --- 2. SİSTEM ÇEKİRDEĞİ ---
 if "GROQ_API_KEY" not in st.secrets:
     st.error("Secrets ayarlarında GROQ_API_KEY eksik!")
     st.stop()
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-
-@st.cache_resource
-def build_billion_parameter_brain():
-    # Milyarlarca parametrelik dev mimari iskeleti (cite: 1768834898588.jpeg)
-    # Çökme riskine karşı optimize edilmiş devasa yapı
-    config = LlamaConfig(
-        vocab_size=32000, hidden_size=2048, intermediate_size=5632,
-        num_hidden_layers=12, num_attention_heads=16
-    )
-    return LlamaForCausalLM(config)
-
-try:
-    model_skeleton = build_billion_parameter_brain()
-except:
-    st.info("🧠 Sinir ağı mimarisi arka planda stabilize ediliyor...")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -84,18 +67,19 @@ for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(str(m["content"]))
 
-# --- 5. AKILLI GİRİŞ (BAGER'E SORUN GÜNCELLEMESİ) ---
+# --- 5. AKILLI GİRİŞ SİSTEMİ ---
 st.write("🎙️ **Sesli Komut:**")
+# Sustuğunuzda otomatik durmayı sağlar (cite: 1768831809607.jpeg)
 voice_in = speech_to_text(
-    language='tr', start_prompt="Dokun ve Konuş", stop_prompt="Dinliyorum...",
-    just_once=True, key='bager_ultimate_mic'
+    language='tr', start_prompt="Konuşmak için Dokun", stop_prompt="Dinliyorum...",
+    just_once=True, key='bager_ultimate_mic_stable'
 )
 
 query = None
 if voice_in:
     query = voice_in
     st.session_state.voice_active = True
-# İSTEDİĞİNİZ DEĞİŞİKLİK BURADA:
+# İSTEDİĞİNİZ DEĞİŞİKLİK: "Bager'e sorun" (cite: 1768842311441.jpeg)
 elif txt_input := st.chat_input("Bager'e sorun"):
     query = txt_input
     st.session_state.voice_active = False
@@ -112,16 +96,21 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         q_low = u_msg.lower()
         res_text = ""
 
+        # Resim Üretimi
         if any(x in q_low for x in ["resim", "çiz", "tasarla"]):
             try:
                 url = f"https://image.pollinations.ai/prompt/{u_msg.replace(' ', '%20')}?width=1024&height=1024&seed={random.randint(1, 10**6)}"
                 st.image(url, caption="BAZ BAGER Sanatı")
                 res_text = url
             except: st.error("Motor meşgul.")
+        # Zeka Yanıtı (Llama-3 70B - Milyarlarca Parametrelik Güç)
         else:
             try:
                 sys_msg = "Sen BAZ BAGER'sin. Sahibi Aykut Kutpınar. Gemini zekasına ve bilgisine sahipsin. SADECE saf Türkçe konuş."
-                hist = [{"role": "system", "content": sys_msg}] + [m for m in st.session_state.messages if "http" not in str(m["content"])]
+                hist = [{"role": "system", "content": sys_msg}]
+                for m in st.session_state.messages:
+                    if "http" not in str(m["content"]): hist.append(m)
+                # Buradaki model dünyanın en güçlü 70 milyar parametrelik modellerinden biridir.
                 chat = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=hist)
                 res_text = chat.choices[0].message.content
                 st.markdown(res_text)
@@ -129,6 +118,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
 
         if res_text:
             st.session_state.messages.append({"role": "assistant", "content": res_text})
+            # Akıllı Ses: Sadece mikrofona dokunduysa konuşur
             if st.session_state.voice_active and "http" not in res_text:
                 try:
                     tts = gTTS(text=res_text, lang='tr', slow=False)
